@@ -1,73 +1,65 @@
 import requests
-from bs4 import BeautifulSoup
+import sys
+from time import sleep
 
-def search_item(item):
-    websites = [
-        "https://www.aliexpress.com/wholesale?SearchText=",
-        "https://www.alibaba.com/trade/search?fsb=y&IndexArea=product_en&CatId=&SearchText=",
-        "https://www.shein.com/SearchResults.asp?SearchKey=",
-        "https://www.taobao.com/search?q=",
-        "https://www.jd.com/search?keyword=",
-        "https://www.pinduoduo.com/search?query=",
-        "https://www.temu.com/search?q=",
-        "https://www.1688.com/chanpin/?keywords=",
-        "https://www.dhgate.com/wholesale?q=",
-    ]
+# Define the retry count and delay between retries
+RETRY_COUNT = 3
+RETRY_DELAY = 5  # seconds
 
-    results = []
+# List of Chinese e-commerce websites to scrape
+URLS = [
+    "https://www.temu.com/search?q={item}",
+    "https://www.shein.com/search/{item}-c-1673.html",
+    "https://www.aliexpress.com/wholesale?SearchText={item}",
+    "https://www.jd.com/search?keyword={item}",
+    "https://www.taobao.com/search?q={item}",
+    "https://www.pinduoduo.com/search/{item}",
+]
 
-    # Search each website
-    for website in websites:
-        url = website + item
-        response = requests.get(url)
-        soup = BeautifulSoup(response.text, 'html.parser')
+def fetch_item_data(url, item):
+    """Fetches data from a URL and handles request exceptions."""
+    for attempt in range(RETRY_COUNT):
+        try:
+            # Format the URL with the item
+            formatted_url = url.format(item=item)
+            print(f"Attempting to fetch data from {formatted_url}")
+            
+            # Send GET request to the formatted URL
+            response = requests.get(formatted_url)
+            response.raise_for_status()  # Will raise HTTPError for bad status codes
+            
+            # Assuming the website returns JSON, you can adjust this as needed for HTML scraping
+            return response.text  # You can process the HTML further if needed
+        except requests.exceptions.RequestException as e:
+            print(f"Attempt {attempt + 1}/{RETRY_COUNT} failed: {e}")
+            if attempt < RETRY_COUNT - 1:
+                sleep(RETRY_DELAY)  # Wait before retrying
+            else:
+                print(f"Failed to fetch data from {formatted_url} after {RETRY_COUNT} attempts.")
+                raise  # Reraise the error if retries are exhausted
 
-        if 'aliexpress' in website:
-            products = soup.find_all('div', class_="product")  # Update with actual class on Aliexpress
-        elif 'alibaba' in website:
-            products = soup.find_all('div', class_="item-content")  # Update with actual class on Alibaba
-        elif 'shein' in website:
-            products = soup.find_all('div', class_="product-item")  # Update with actual class on Shein
-
-        for product in products:
-            name = product.find('a', class_="product-name") or product.find('span', class_="product-name")  # Example
-            price = product.find('span', class_="price") or product.find('span', class_="price-range")  # Example
-            if name and price:
-                results.append({
-                    "name": name.get_text(strip=True),
-                    "price": price.get_text(strip=True),
-                    "link": website + item
-                })
-    
-    return results
-
-def generate_gpt_prompt(results):
-    prompt = "Here are some options for the product you're looking for:\n\n"
-    
-    for idx, result in enumerate(results, start=1):
-        prompt += f"Option {idx}: {result['name']} - Price: {result['price']}\nLink: {result['link']}\n\n"
-    
-    prompt += "Please summarize the options in a way that highlights the best deals, including any discounts or notable features."
-    
-    return prompt
-
-# Main function to run the program
 def main():
-    # Ask the user for the name of the item
-    item = input("Enter the name of the item you want to search for: ")
+    if len(sys.argv) != 2:
+        print("Error: Please provide the item name as a command-line argument.")
+        sys.exit(1)
 
-    # Collect results from websites
-    results = search_item(item)
-
-    # Generate a GPT-4 Mini prompt based on the collected data
-    gpt_prompt = generate_gpt_prompt(results)
-
-    # Print the GPT-4 Mini prompt (or save to a text file)
-    print(gpt_prompt)
-
-    # Optionally save it to a text file
-    with open("gpt_prompt.txt", "w") as f:
-        f.write(gpt_prompt)
+    item = sys.argv[1]  # Get the item name from the command line arguments
+    
+    all_results = {}
+    
+    # Loop through all URLs and fetch data
+    for url in URLS:
+        try:
+            print(f"Searching for '{item}' on {url}")
+            results = fetch_item_data(url, item)
+            all_results[url] = results
+        except Exception as e:
+            print(f"Error fetching from {url}: {e}")
+    
+    # Output all the results fetched
+    print("\nAll search results:")
+    for url, results in all_results.items():
+        print(f"Results from {url}: {results}")
 
 if __name__ == "__main__":
     main()
