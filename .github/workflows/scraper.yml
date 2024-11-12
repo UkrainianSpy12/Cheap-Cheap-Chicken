@@ -30,7 +30,7 @@ jobs:
           ITEM_NAME="${{ github.event.inputs.item_name }}" python scraper.py
 
       - name: Upload GPT prompt results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: gpt_prompt
           path: gpt_prompt.txt
