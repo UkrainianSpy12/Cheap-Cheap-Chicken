@@ -1,31 +1,33 @@
-name: Run Scraper
+name: Run Scraper Workflow
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  scraper:
+  run-scraper:
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set item name
-      run: echo "ITEM_NAME=RTX 3060" >> $GITHUB_ENV  # Set the ITEM_NAME environment variable
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'  # Adjust to the version you need
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'  # Use the Python version you need
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt  # Ensure requirements.txt lists necessary packages
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+      - name: Set ITEM_NAME environment variable
+        run: echo "ITEM_NAME=RTX 3060" >> $GITHUB_ENV
 
-    - name: Run scraper script
-      run: python scraper.py
-      env:
-        ITEM_NAME: ${{ secrets.ITEM_NAME }}  # Pass the environment variable to the script
+      - name: Run scraper script
+        env:
+          ITEM_NAME: ${{ env.ITEM_NAME }}
+        run: python scraper.py

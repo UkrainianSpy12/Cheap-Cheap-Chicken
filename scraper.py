@@ -1,5 +1,6 @@
 import requests
 import os  # To read environment variables
+import sys  # To use sys.exit for error handling
 from time import sleep
 
 # Define the retry count and delay between retries
@@ -42,7 +43,7 @@ def main():
     item = os.getenv('ITEM_NAME')  # Get the item name from the environment variable
     if not item:
         print("Error: ITEM_NAME environment variable is not set.")
-        sys.exit(1)
+        sys.exit(1)  # Exits the script with an error code
 
     all_results = {}
     
