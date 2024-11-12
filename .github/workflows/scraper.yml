@@ -20,15 +20,15 @@ jobs:
           python-version: '3.12'
 
       - name: List files in directory (for debugging)
-        run: ls -la
+        run: ls -la  # Helps confirm that requirements.txt is in the expected location
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
+          if [ -f "$(pwd)/requirements.txt" ]; then
+            pip install -r "$(pwd)/requirements.txt"
           else
-            echo "requirements.txt not found"
+            echo "requirements.txt not found in $(pwd)"
             exit 1
           fi
 
