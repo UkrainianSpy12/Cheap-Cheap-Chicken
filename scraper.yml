@@ -1,0 +1,36 @@
+name: Run Item Search and Generate GPT Prompt
+
+on:
+  workflow_dispatch:
+    inputs:
+      item_name:
+        description: 'Item name to search for'
+        required: true
+        default: 'RTX 3060'
+
+jobs:
+  run_scraper:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: Run scraper
+        run: |
+          ITEM_NAME="${{ github.event.inputs.item_name }}" python scraper.py
+
+      - name: Upload GPT prompt results
+        uses: actions/upload-artifact@v2
+        with:
+          name: gpt_prompt
+          path: gpt_prompt.txt
