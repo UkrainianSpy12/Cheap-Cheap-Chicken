@@ -1,5 +1,5 @@
 import requests
-import sys
+import os  # To read environment variables
 from time import sleep
 
 # Define the retry count and delay between retries
@@ -39,12 +39,11 @@ def fetch_item_data(url, item):
                 raise  # Reraise the error if retries are exhausted
 
 def main():
-    if len(sys.argv) != 2:
-        print("Error: Please provide the item name as a command-line argument.")
+    item = os.getenv('ITEM_NAME')  # Get the item name from the environment variable
+    if not item:
+        print("Error: ITEM_NAME environment variable is not set.")
         sys.exit(1)
 
-    item = sys.argv[1]  # Get the item name from the command line arguments
-    
     all_results = {}
     
     # Loop through all URLs and fetch data
